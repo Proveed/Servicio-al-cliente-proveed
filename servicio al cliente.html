@@ -839,7 +839,6 @@ window.crearAgente=async function(){
     cargarAgentes();
   } catch(e){ showToast('Error: '+e.message); }
 };
-
 window.eliminarAgente=async function(id){
   if(!confirm('¿Eliminar este agente?')) return;
   await sb.from('agentes_soporte').delete().eq('id',id);
