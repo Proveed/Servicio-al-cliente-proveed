@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PROVEED — Soporte</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  :root{ --verde:#A8E63D; --naranja:#FF8C00; --negro:#0A0A0A; --rojo:#FF4D4D; --azul:#007AFF; --morado:#AF52DE; }
+  body{ background:var(--negro); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+
+  /* LOGIN */
+  .login-screen{ position:fixed; inset:0; background:var(--negro); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:1000; padding:32px; }
+  .login-logo{ width:64px; height:64px; background:var(--azul); border-radius:20px; display:flex; align-items:center; justify-content:center; margin-bottom:20px; }
+  .login-logo svg{ width:32px; height:32px; stroke:white; fill:none; stroke-width:2.5; }
+  .login-title{ font-size:1.4rem; font-weight:800; color:white; margin-bottom:4px; }
+  .login-sub{ font-size:0.82rem; color:#444; margin-bottom:8px; text-align:center; }
+  .login-roles{ display:flex; gap:8px; margin-bottom:24px; }
+  .role-chip{ padding:6px 14px; border-radius:20px; font-size:0.72rem; font-weight:700; cursor:pointer; border:1.5px solid #222; color:#555; background:transparent; font-family:'Inter',sans-serif; transition:0.2s; }
+  .role-chip.selected{ border-color:var(--azul); color:var(--azul); background:rgba(0,122,255,0.08); }
+  .login-field{ width:100%; margin-bottom:12px; }
+  .login-field input{ width:100%; padding:14px 16px; background:#111; border:1.5px solid #222; border-radius:14px; font-family:'Inter',sans-serif; font-size:0.92rem; color:white; outline:none; }
+  .login-field input:focus{ border-color:var(--azul); }
+  .login-field input::placeholder{ color:#444; }
+  .btn-login{ width:100%; padding:15px; background:var(--azul); color:white; border:none; border-radius:14px; font-family:'Inter',sans-serif; font-size:0.95rem; font-weight:800; cursor:pointer; }
+  .login-error{ color:var(--rojo); font-size:0.78rem; text-align:center; margin-top:10px; display:none; }
+
+  /* LAYOUT */
+  .app{ display:none; min-height:100vh; }
+  .top-bar{ background:#111; padding:44px 16px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #1e1e1e; position:sticky; top:0; z-index:100; }
+  .top-left{ display:flex; align-items:center; gap:10px; }
+  .top-icon{ width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; }
+  .top-icon svg{ width:16px; height:16px; stroke:white; fill:none; stroke-width:2.5; }
+  .top-title{ font-size:0.95rem; font-weight:800; color:white; }
+  .top-subtitle{ font-size:0.65rem; color:#555; }
+  .top-right{ display:flex; gap:8px; align-items:center; }
+  .agente-chip{ background:#1e1e1e; color:#aaa; font-size:0.68rem; font-weight:700; padding:5px 10px; border-radius:8px; }
+  .btn-logout{ background:rgba(255,77,77,0.1); color:var(--rojo); border:none; padding:7px 12px; border-radius:10px; font-family:'Inter',sans-serif; font-size:0.72rem; font-weight:600; cursor:pointer; }
+
+  /* TABS */
+  .tabs-nav{ display:flex; overflow-x:auto; scrollbar-width:none; background:#111; border-bottom:1px solid #1e1e1e; padding:0 16px; }
+  .tabs-nav::-webkit-scrollbar{ display:none; }
+  .tab-btn{ padding:13px 14px; border:none; background:transparent; font-family:'Inter',sans-serif; font-size:0.76rem; font-weight:600; color:#555; cursor:pointer; white-space:nowrap; border-bottom:2px solid transparent; }
+  .tab-btn.active{ color:var(--azul); border-bottom-color:var(--azul); }
+
+  /* SECCIONES */
+  .section{ display:none; padding:14px 16px 40px; }
+  .section.active{ display:block; }
+
+  /* STATS */
+  .stats-row{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
+  .stat-box{ background:#111; border:1px solid #1e1e1e; border-radius:16px; padding:14px; }
+  .stat-val{ font-size:1.4rem; font-weight:800; color:white; }
+  .stat-val.azul{ color:var(--azul); }
+  .stat-val.naranja{ color:var(--naranja); }
+  .stat-val.verde{ color:var(--verde); }
+  .stat-val.rojo{ color:var(--rojo); }
+  .stat-lbl{ font-size:0.62rem; color:#555; font-weight:600; text-transform:uppercase; margin-top:3px; }
+
+  /* TICKETS */
+  .search-bar{ background:#111; border:1px solid #1e1e1e; border-radius:12px; padding:11px 14px; display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .search-bar input{ flex:1; background:transparent; border:none; outline:none; color:white; font-family:'Inter',sans-serif; font-size:0.88rem; }
+  .search-bar input::placeholder{ color:#444; }
+  .search-bar svg{ width:16px; height:16px; stroke:#444; fill:none; stroke-width:2.5; }
+  .filtros{ display:flex; gap:8px; margin-bottom:12px; overflow-x:auto; scrollbar-width:none; }
+  .filtros::-webkit-scrollbar{ display:none; }
+  .f-btn{ padding:6px 14px; border-radius:20px; border:1px solid #222; background:transparent; font-size:0.72rem; font-weight:600; color:#555; cursor:pointer; white-space:nowrap; font-family:'Inter',sans-serif; }
+  .f-btn.active{ background:#1e1e1e; color:white; border-color:#333; }
+
+  .ticket-card{ background:#111; border:1px solid #1e1e1e; border-radius:16px; padding:14px; margin-bottom:10px; cursor:pointer; transition:0.2s; }
+  .ticket-card:hover{ border-color:#333; }
+  .ticket-card.urgente{ border-left:3px solid var(--rojo); }
+  .ticket-card.medio{ border-left:3px solid var(--naranja); }
+  .ticket-card.bajo{ border-left:3px solid var(--verde); }
+  .tk-header{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .tk-avatar{ width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:0.9rem; font-weight:800; flex-shrink:0; overflow:hidden; }
+  .tk-avatar img{ width:100%; height:100%; object-fit:cover; }
+  .tk-info{ flex:1; min-width:0; }
+  .tk-nombre{ font-size:0.88rem; font-weight:700; color:white; }
+  .tk-meta{ font-size:0.7rem; color:#555; margin-top:1px; }
+  .tk-badge{ font-size:0.6rem; font-weight:700; padding:3px 8px; border-radius:6px; white-space:nowrap; flex-shrink:0; }
+  .badge-abierto{ background:rgba(255,77,77,0.12); color:var(--rojo); }
+  .badge-proceso{ background:rgba(255,140,0,0.12); color:var(--naranja); }
+  .badge-resuelto{ background:rgba(168,230,61,0.12); color:var(--verde); }
+  .badge-cerrado{ background:#1e1e1e; color:#555; }
+  .tk-asunto{ font-size:0.85rem; font-weight:600; color:white; margin-bottom:4px; }
+  .tk-preview{ font-size:0.76rem; color:#555; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .tk-footer{ display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+  .tk-prioridad{ display:flex; align-items:center; gap:4px; font-size:0.68rem; color:#555; }
+  .tk-tipo{ font-size:0.65rem; background:#1a1a1a; color:#666; padding:2px 8px; border-radius:6px; }
+  .tk-time{ font-size:0.68rem; color:#444; }
+
+  /* CONV SOPORTE */
+  .conv-view{ display:none; flex-direction:column; height:100vh; background:var(--negro); position:fixed; inset:0; z-index:200; }
+  .conv-view.show{ display:flex; }
+  .conv-header{ background:#111; padding:44px 16px 14px; display:flex; align-items:center; gap:12px; border-bottom:1px solid #1e1e1e; flex-shrink:0; }
+  .conv-back{ width:36px; height:36px; background:rgba(255,255,255,0.08); border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; flex-shrink:0; }
+  .conv-back svg{ width:18px; height:18px; stroke:white; fill:none; stroke-width:2.5; }
+  .conv-avatar{ width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:0.9rem; font-weight:800; color:white; flex-shrink:0; }
+  .conv-info{ flex:1; }
+  .conv-nombre{ font-size:0.88rem; font-weight:700; color:white; }
+  .conv-estado-txt{ font-size:0.7rem; color:var(--azul); }
+  .conv-acciones-top{ display:flex; gap:6px; flex-shrink:0; }
+  .conv-btn-top{ padding:6px 10px; border-radius:8px; border:none; font-family:'Inter',sans-serif; font-size:0.68rem; font-weight:700; cursor:pointer; }
+
+  .mensajes-area{ flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:8px; -webkit-overflow-scrolling:touch; }
+  .msg-grupo{ display:flex; flex-direction:column; gap:4px; }
+  .msg-grupo.agente{ align-items:flex-end; }
+  .msg-grupo.usuario{ align-items:flex-start; }
+  .msg-sender-lbl{ font-size:0.62rem; color:#555; font-weight:600; padding:0 4px; margin-bottom:2px; }
+  .msg-burbuja{ max-width:82%; padding:10px 13px; border-radius:16px; font-size:0.86rem; line-height:1.5; word-break:break-word; }
+  .msg-burbuja.agente{ background:var(--azul); color:white; border-radius:16px 4px 16px 16px; }
+  .msg-burbuja.usuario{ background:#161616; color:white; border-radius:4px 16px 16px 16px; border:1px solid #222; }
+  .msg-hora-txt{ font-size:0.58rem; color:rgba(255,255,255,0.4); text-align:right; margin-top:3px; }
+  .msg-burbuja.usuario .msg-hora-txt{ color:#555; text-align:left; }
+  .msg-sistema{ text-align:center; font-size:0.72rem; color:#444; padding:6px 12px; background:#111; border-radius:20px; margin:4px auto; }
+
+  /* RESPUESTAS RAPIDAS */
+  .respuestas-rapidas{ padding:8px 12px 4px; overflow-x:auto; scrollbar-width:none; display:flex; gap:6px; flex-shrink:0; }
+  .respuestas-rapidas::-webkit-scrollbar{ display:none; }
+  .resp-chip{ background:#1a1a1a; border:1px solid #2a2a2a; border-radius:16px; padding:6px 12px; font-size:0.72rem; color:#aaa; cursor:pointer; white-space:nowrap; border:none; font-family:'Inter',sans-serif; }
+  .resp-chip:hover{ background:#222; color:white; }
+  .input-area{ background:#111; border-top:1px solid #1e1e1e; padding:10px 12px; padding-bottom:max(10px,env(safe-area-inset-bottom)); flex-shrink:0; }
+  .input-row{ display:flex; gap:8px; align-items:flex-end; }
+  .msg-input{ flex:1; background:#1a1a1a; border:1.5px solid #222; border-radius:20px; padding:10px 16px; font-family:'Inter',sans-serif; font-size:0.9rem; color:white; outline:none; resize:none; max-height:100px; line-height:1.4; -webkit-appearance:none; }
+  .msg-input::placeholder{ color:#444; }
+  .msg-input:focus{ border-color:var(--azul); }
+  .send-btn{ width:42px; height:42px; border-radius:50%; background:var(--azul); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+  .send-btn svg{ width:16px; height:16px; stroke:white; fill:none; stroke-width:2.5; margin-left:2px; }
+
+  /* HERRAMIENTAS */
+  .herramienta-card{ background:#111; border:1px solid #1e1e1e; border-radius:16px; padding:16px; margin-bottom:10px; }
+  .herr-title{ font-size:0.88rem; font-weight:700; color:white; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+  .herr-title svg{ width:16px; height:16px; fill:none; stroke-width:2; }
+  .herr-sub{ font-size:0.75rem; color:#555; margin-bottom:12px; }
+  .field{ margin-bottom:10px; }
+  .field label{ display:block; font-size:0.68rem; font-weight:700; color:#555; text-transform:uppercase; margin-bottom:5px; }
+  .field input,.field select,.field textarea{ width:100%; padding:11px 13px; background:#1a1a1a; border:1px solid #222; border-radius:11px; font-family:'Inter',sans-serif; font-size:0.88rem; color:white; outline:none; -webkit-appearance:none; }
+  .field input:focus{ border-color:var(--azul); }
+  .field input::placeholder{ color:#444; }
+  .field select option{ background:#1a1a1a; }
+  .btn-herr{ padding:10px 16px; border-radius:11px; border:none; font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:700; cursor:pointer; }
+  .btn-herr.azul{ background:rgba(0,122,255,0.15); color:var(--azul); }
+  .btn-herr.naranja{ background:rgba(255,140,0,0.15); color:var(--naranja); }
+  .btn-herr.rojo{ background:rgba(255,77,77,0.12); color:var(--rojo); }
+  .btn-herr.verde{ background:rgba(168,230,61,0.12); color:var(--verde); }
+  .herr-resultado{ background:#1a1a1a; border-radius:12px; padding:12px; margin-top:10px; font-size:0.78rem; color:#aaa; display:none; }
+  .herr-resultado.show{ display:block; }
+  .herr-resultado.exito{ border-left:3px solid var(--verde); color:var(--verde); }
+  .herr-resultado.error{ border-left:3px solid var(--rojo); color:var(--rojo); }
+
+  /* NUEVO TICKET */
+  .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none; z-index:300; align-items:flex-end; }
+  .modal-overlay.show{ display:flex; }
+  .modal-sheet{ background:#111; width:100%; max-height:85vh; border-radius:24px 24px 0 0; transform:translateY(100%); transition:0.4s cubic-bezier(0.16,1,0.3,1); display:flex; flex-direction:column; overflow:hidden; border:1px solid #1e1e1e; border-bottom:none; }
+  .modal-overlay.show .modal-sheet{ transform:translateY(0); }
+  .drag{ width:36px; height:4px; background:#333; border-radius:4px; margin:14px auto 0; flex-shrink:0; }
+  .modal-header{ padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e1e1e; flex-shrink:0; }
+  .modal-title{ font-size:1rem; font-weight:700; color:white; }
+  .close-btn{ width:30px; height:30px; background:#1e1e1e; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; }
+  .close-btn svg{ width:14px; height:14px; stroke:#666; fill:none; stroke-width:2.5; }
+  .modal-body{ overflow-y:auto; padding:16px 16px 32px; flex:1; }
+  .btn-submit{ width:100%; padding:13px; background:var(--azul); color:white; border:none; border-radius:13px; font-family:'Inter',sans-serif; font-size:0.92rem; font-weight:800; cursor:pointer; margin-top:8px; }
+
+  /* ACCESO AGENTE */
+  .acceso-card{ background:#111; border:1px solid #1e1e1e; border-radius:16px; padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+  .acceso-info{ flex:1; }
+  .acceso-nombre{ font-size:0.88rem; font-weight:700; color:white; }
+  .acceso-email{ font-size:0.72rem; color:#555; margin-top:2px; }
+  .acceso-permisos{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
+  .perm-tag{ font-size:0.6rem; font-weight:700; padding:2px 7px; border-radius:5px; background:#1a1a1a; color:#666; }
+  .perm-tag.on{ background:rgba(0,122,255,0.1); color:var(--azul); }
+  .acceso-actions{ display:flex; gap:6px; flex-shrink:0; }
+  .acc-btn{ padding:6px 10px; border-radius:8px; border:none; font-family:'Inter',sans-serif; font-size:0.68rem; font-weight:700; cursor:pointer; }
+
+  .empty-state{ text-align:center; padding:40px 20px; color:#444; }
+  .empty-state svg{ width:48px; height:48px; stroke:#333; fill:none; stroke-width:1.2; margin:0 auto 12px; display:block; }
+  .empty-state p{ font-size:0.82rem; }
+  .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--azul); color:white; padding:10px 20px; border-radius:24px; font-size:0.82rem; font-weight:700; opacity:0; transition:0.3s; pointer-events:none; z-index:2000; white-space:nowrap; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .sec-title{ font-size:0.72rem; font-weight:700; color:#444; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
+  .btn-nuevo-sm{ background:var(--azul); color:white; border:none; padding:6px 12px; border-radius:8px; font-family:'Inter',sans-serif; font-size:0.72rem; font-weight:700; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-logo"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+  <div class="login-title">Soporte PROVEED</div>
+  <div class="login-sub">Panel de atención al cliente</div>
+  <div class="login-roles">
+    <button class="role-chip selected" id="role-super" onclick="selRole('super')">Super Admin</button>
+    <button class="role-chip" id="role-agente" onclick="selRole('agente')">Agente</button>
+  </div>
+  <div class="login-field"><input type="email" id="s-email" placeholder="Correo electrónico"></div>
+  <div class="login-field"><input type="password" id="s-pass" placeholder="Contraseña"></div>
+  <button class="btn-login" onclick="doLogin()">ENTRAR →</button>
+  <div class="login-error" id="login-error">Credenciales incorrectas</div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="top-bar">
+    <div class="top-left">
+      <div class="top-icon" style="background:var(--azul);"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+      <div><div class="top-title">Soporte PROVEED</div><div class="top-subtitle" id="agente-label">Cargando...</div></div>
+    </div>
+    <div class="top-right">
+      <div class="agente-chip" id="agente-rol-chip">—</div>
+      <button class="btn-logout" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="tabs-nav" id="tabs-nav">
+    <button class="tab-btn active" onclick="showTab('tickets',this)">Tickets</button>
+    <button class="tab-btn" onclick="showTab('buscar',this)">Buscar usuario</button>
+    <button class="tab-btn" onclick="showTab('herramientas',this)">Herramientas</button>
+    <button class="tab-btn id-tab-accesos" onclick="showTab('accesos',this)" id="tab-accesos" style="display:none;">Agentes</button>
+  </div>
+
+  <!-- TICKETS -->
+  <div class="section active" id="sec-tickets">
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val rojo" id="st-abiertos">—</div><div class="stat-lbl">Abiertos</div></div>
+      <div class="stat-box"><div class="stat-val naranja" id="st-proceso">—</div><div class="stat-lbl">En proceso</div></div>
+      <div class="stat-box"><div class="stat-val verde" id="st-resueltos">—</div><div class="stat-lbl">Resueltos hoy</div></div>
+      <div class="stat-box"><div class="stat-val azul" id="st-total">—</div><div class="stat-lbl">Total tickets</div></div>
+    </div>
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" placeholder="Buscar ticket o usuario..." oninput="buscarTicket(this.value)">
+    </div>
+    <div class="filtros">
+      <button class="f-btn active" onclick="filtrarTk('todos',this)">Todos</button>
+      <button class="f-btn" onclick="filtrarTk('abierto',this)">Abiertos</button>
+      <button class="f-btn" onclick="filtrarTk('proceso',this)">En proceso</button>
+      <button class="f-btn" onclick="filtrarTk('resuelto',this)">Resueltos</button>
+      <button class="f-btn" onclick="filtrarTk('urgente',this)">Urgentes</button>
+    </div>
+    <div id="tickets-lista"><div class="empty-state"><p>Cargando tickets...</p></div></div>
+    <button class="btn-submit" style="margin-top:8px;" onclick="abrirNuevoTicket()">+ Crear ticket manual</button>
+  </div>
+
+  <!-- BUSCAR USUARIO -->
+  <div class="section" id="sec-buscar">
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="buscar-input" placeholder="Nombre, email o cédula...">
+    </div>
+    <button class="btn-submit" onclick="buscarUsuario()">Buscar</button>
+    <div id="buscar-resultado" style="margin-top:14px;"></div>
+  </div>
+
+    <!-- HERRAMIENTAS -->
+  <div class="section" id="sec-herramientas">
+    <div class="sec-title">Herramientas de soporte</div>
+
+    <!-- Resetear contraseña -->
+    <div class="herramienta-card">
+      <div class="herr-title" style="color:var(--naranja);"><svg viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Resetear contraseña</div>
+      <div class="herr-sub">Envía un link de reseteo al correo del usuario</div>
+      <div class="field"><label>Email del usuario *</label><input type="email" id="reset-email" placeholder="usuario@ejemplo.com"></div>
+      <button class="btn-herr naranja" onclick="resetearPassword()">Enviar link de reseteo</button>
+      <div class="herr-resultado" id="reset-res"></div>
+    </div>
+
+    <!-- Verificar usuario -->
+    <div class="herramienta-card" id="herr-verificar">
+      <div class="herr-title" style="color:var(--verde);"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Verificar usuario</div>
+      <div class="herr-sub">Marca un usuario como verificado manualmente</div>
+      <div class="field"><label>Email del usuario *</label><input type="email" id="verif-email" placeholder="usuario@ejemplo.com"></div>
+      <button class="btn-herr verde" onclick="verificarUsuario()">Verificar cuenta</button>
+      <div class="herr-resultado" id="verif-res"></div>
+    </div>
+
+    <!-- Bloquear / Desbloquear -->
+    <div class="herramienta-card" id="herr-bloquear">
+      <div class="herr-title" style="color:var(--rojo);"><svg viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Bloquear / Desbloquear</div>
+      <div class="herr-sub">Activa o desactiva el acceso de un usuario</div>
+      <div class="field"><label>Email del usuario *</label><input type="email" id="block-email" placeholder="usuario@ejemplo.com"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-herr verde" onclick="toggleBloqueo(false)">✓ Activar</button>
+        <button class="btn-herr rojo" onclick="toggleBloqueo(true)">✗ Bloquear</button>
+      </div>
+      <div class="herr-resultado" id="block-res"></div>
+    </div>
+
+    <!-- Cambiar rol -->
+    <div class="herramienta-card" id="herr-rol">
+      <div class="herr-title" style="color:var(--azul);"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Cambiar rol</div>
+      <div class="herr-sub">Cambia el rol de un usuario en la plataforma</div>
+      <div class="field"><label>Email *</label><input type="email" id="rol-email" placeholder="usuario@ejemplo.com"></div>
+      <div class="field"><label>Nuevo rol *</label>
+        <select id="rol-nuevo">
+          <option value="emprendedor">Emprendedor</option>
+          <option value="proveedor">Proveedor</option>
+        </select>
+      </div>
+      <button class="btn-herr azul" onclick="cambiarRol()">Cambiar rol</button>
+      <div class="herr-resultado" id="rol-res"></div>
+    </div>
+
+    <!-- Ver datos usuario -->
+    <div class="herramienta-card">
+      <div class="herr-title" style="color:var(--morado);"><svg viewBox="0 0 24 24" stroke="var(--morado)"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Consultar usuario</div>
+      <div class="herr-sub">Ver datos completos de un usuario por email</div>
+      <div class="field"><label>Email *</label><input type="email" id="cons-email" placeholder="usuario@ejemplo.com"></div>
+      <button class="btn-herr" style="background:rgba(175,82,222,0.12);color:var(--morado);" onclick="consultarUsuario()">Ver datos</button>
+      <div class="herr-resultado" id="cons-res"></div>
+    </div>
+
+    <!-- Eliminar cuenta -->
+    <div class="herramienta-card" id="herr-eliminar">
+      <div class="herr-title" style="color:var(--rojo);"><svg viewBox="0 0 24 24" stroke="currentColor"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>Eliminar cuenta</div>
+      <div class="herr-sub">Elimina permanentemente la cuenta de un usuario</div>
+      <div class="field"><label>Email del usuario *</label><input type="email" id="del-email" placeholder="usuario@ejemplo.com"></div>
+      <button class="btn-herr rojo" onclick="eliminarCuenta()">Eliminar cuenta</button>
+      <div class="herr-resultado" id="del-res"></div>
+    </div>
+  </div>
+
+  <!-- AGENTES (solo super admin) -->
+  <div class="section" id="sec-accesos">
+    <div class="sec-title">Agentes de soporte <button class="btn-nuevo-sm" onclick="abrirNuevoAgente()">+ Nuevo agente</button></div>
+    <div id="agentes-lista"><div class="empty-state"><p>Cargando agentes...</p></div></div>
+  </div>
+</div>
+
+<!-- CONVERSACIÓN TICKET -->
+<div class="conv-view" id="conv-view">
+  <div class="conv-header">
+    <button class="conv-back" onclick="cerrarConv()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+    <div class="conv-avatar" id="cv-avatar" style="background:var(--azul);">U</div>
+    <div class="conv-info">
+      <div class="conv-nombre" id="cv-nombre">Usuario</div>
+      <div class="conv-estado-txt" id="cv-asunto">—</div>
+    </div>
+    <div class="conv-acciones-top">
+      <button class="conv-btn-top" id="cv-btn-estado" style="background:rgba(255,140,0,0.12);color:var(--naranja);" onclick="cambiarEstadoTicket()">En proceso</button>
+      <button class="conv-btn-top" style="background:rgba(168,230,61,0.12);color:var(--verde);" onclick="resolverTicket()">✓ Resolver</button>
+    </div>
+  </div>
+  <div class="mensajes-area" id="mensajes-area"></div>
+  <div class="respuestas-rapidas">
+    <button class="resp-chip" onclick="usarRespuesta('Hola, gracias por contactarnos. Estoy revisando tu caso.')">Saludo inicial</button>
+    <button class="resp-chip" onclick="usarRespuesta('Entiendo tu situación. Voy a ayudarte a resolverlo.')">Empatía</button>
+    <button class="resp-chip" onclick="usarRespuesta('Tu cuenta ha sido verificada correctamente. Ya puedes acceder con normalidad.')">Cuenta verificada</button>
+    <button class="resp-chip" onclick="usarRespuesta('Hemos resuelto el problema. ¿Hay algo más en lo que pueda ayudarte?')">Problema resuelto</button>
+    <button class="resp-chip" onclick="usarRespuesta('Por favor intenta cerrar sesión y volver a entrar. Si el problema persiste, escríbenos.')">Cerrar sesión</button>
+    <button class="resp-chip" onclick="usarRespuesta('Voy a escalar tu caso a un nivel superior. Te contactaremos en las próximas horas.')">Escalar</button>
+  </div>
+  <div class="input-area">
+    <div class="input-row">
+      <textarea class="msg-input" id="cv-input" placeholder="Escribe tu respuesta..." rows="1"></textarea>
+      <button class="send-btn" onclick="enviarRespuesta()"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO TICKET -->
+<div class="modal-overlay" id="modal-ticket" onclick="e=>{ if(e.target===document.getElementById('modal-ticket')) document.getElementById('modal-ticket').classList.remove('show'); }">
+  <div class="modal-sheet">
+    <div class="drag"></div>
+    <div class="modal-header">
+      <span class="modal-title">Crear ticket manual</span>
+      <button class="close-btn" onclick="document.getElementById('modal-ticket').classList.remove('show')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Email del usuario *</label><input type="email" id="nt-email" placeholder="usuario@ejemplo.com"></div>
+      <div class="field"><label>Asunto *</label><input type="text" id="nt-asunto" placeholder="Descripción breve del problema"></div>
+      <div class="field"><label>Descripción *</label><textarea id="nt-desc" rows="4" placeholder="Detalle del problema reportado..."></textarea></div>
+      <div class="field">
+        <label>Prioridad *</label>
+        <select id="nt-prioridad">
+          <option value="bajo">Baja</option>
+          <option value="medio" selected>Media</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tipo de problema</label>
+        <select id="nt-tipo">
+          <option value="acceso">Problema de acceso</option>
+          <option value="verificacion">Verificación de cuenta</option>
+          <option value="pago">Problema de pago</option>
+          <option value="producto">Problema con producto</option>
+          <option value="pedido">Problema con pedido</option>
+          <option value="tecnico">Error técnico</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <button class="btn-submit" onclick="crearTicketManual()">Crear ticket</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO AGENTE -->
+<div class="modal-overlay" id="modal-agente" onclick="e=>{ if(e.target===document.getElementById('modal-agente')) document.getElementById('modal-agente').classList.remove('show'); }">
+  <div class="modal-sheet">
+    <div class="drag"></div>
+    <div class="modal-header">
+      <span class="modal-title">Nuevo agente de soporte</span>
+      <button class="close-btn" onclick="document.getElementById('modal-agente').classList.remove('show')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Nombre *</label><input type="text" id="na-nombre" placeholder="Nombre del agente"></div>
+      <div class="field"><label>Email *</label><input type="email" id="na-email" placeholder="agente@proveed.com"></div>
+      <div class="field"><label>Contraseña *</label><input type="password" id="na-pass" placeholder="Mínimo 6 caracteres"></div>
+      <div style="font-size:0.72rem;color:#555;font-weight:700;text-transform:uppercase;margin-bottom:8px;">Permisos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;" id="permisos-grid">
+        <label style="display:flex;align-items:center;gap:8px;background:#1a1a1a;border-radius:10px;padding:10px;cursor:pointer;"><input type="checkbox" id="p-tickets" checked style="accent-color:var(--azul);"><span style="font-size:0.78rem;color:#aaa;">Tickets</span></label>
+        <label style="display:flex;align-items:center;gap:8px;background:#1a1a1a;border-radius:10px;padding:10px;cursor:pointer;"><input type="checkbox" id="p-buscar" checked style="accent-color:var(--azul);"><span style="font-size:0.78rem;color:#aaa;">Buscar usuarios</span></label>
+        <label style="display:flex;align-items:center;gap:8px;background:#1a1a1a;border-radius:10px;padding:10px;cursor:pointer;"><input type="checkbox" id="p-reset"><span style="font-size:0.78rem;color:#aaa;">Resetear contraseña</span></label>
+        <label style="display:flex;align-items:center;gap:8px;background:#1a1a1a;border-radius:10px;padding:10px;cursor:pointer;"><input type="checkbox" id="p-verificar"><span style="font-size:0.78rem;color:#aaa;">Verificar usuarios</span></label>
+        <label style="display:flex;align-items:center;gap:8px;background:#1a1a1a;border-radius:10px;padding:10px;cursor:pointer;"><input type="checkbox" id="p-bloquear"><span style="font-size:0.78rem;color:#aaa;">Bloquear usuarios</span></label>
+        <label style="display:flex;align-items:center;gap:8px;background:#1a1a1a;border-radius:10px;padding:10px;cursor:pointer;"><input type="checkbox" id="p-eliminar"><span style="font-size:0.78rem;color:#aaa;">Eliminar cuentas</span></label>
+      </div>
+      <button class="btn-submit" onclick="crearAgente()">Crear agente</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const { createClient } = supabase;
+const sb = createClient('https://hfmsyrmkewscnvwynzfq.supabase.co','sb_publishable_d1oLsq70a6ZV33vW3XkRgw_nYcN2Z9v');
+
+const SUPER_ADMIN='proveed30@gmail.com';
+let rolActual='super', currentUser=null, agenteData=null;
+let todosTickets=[], filtroTk='todos', busqTk='';
+let ticketActivo=null, mensajesTicket=[];
+
+// LOGIN
+window.selRole=function(r){
+  rolActual=r;
+  document.getElementById('role-super').classList.toggle('selected',r==='super');
+  document.getElementById('role-agente').classList.toggle('selected',r==='agente');
+};
+
+window.doLogin=async function(){
+  const email=document.getElementById('s-email').value.trim();
+  const pass=document.getElementById('s-pass').value;
+  const errEl=document.getElementById('login-error');
+  errEl.style.display='none';
+  const { data,error } = await sb.auth.signInWithPassword({email,password:pass});
+  if(error){ errEl.style.display='block'; return; }
+  currentUser=data.user;
+  if(rolActual==='super'&&email!==SUPER_ADMIN){ await sb.auth.signOut(); errEl.style.display='block'; return; }
+  if(rolActual==='agente'){
+    const { data:ag } = await sb.from('agentes_soporte').select('*').eq('email',email).single();
+    if(!ag){ await sb.auth.signOut(); errEl.textContent='No tienes acceso de agente'; errEl.style.display='block'; return; }
+    agenteData=ag;
+    aplicarPermisosAgente(ag);
+  }
+  iniciarApp(email,rolActual);
+};
+
+function aplicarPermisosAgente(ag){
+  const perms=ag.permisos||[];
+  if(!perms.includes('reset')) document.getElementById('herr-verificar') && (document.getElementById('herr-verificar').style.display='none');
+  if(!perms.includes('verificar')) document.getElementById('herr-verificar') && (document.getElementById('herr-verificar').style.display='none');
+  if(!perms.includes('bloquear')) document.getElementById('herr-bloquear') && (document.getElementById('herr-bloquear').style.display='none');
+  if(!perms.includes('eliminar')) document.getElementById('herr-eliminar') && (document.getElementById('herr-eliminar').style.display='none');
+  if(!perms.includes('rol')) document.getElementById('herr-rol') && (document.getElementById('herr-rol').style.display='none');
+}
+
+function iniciarApp(email,rol){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('agente-label').textContent=email;
+  document.getElementById('agente-rol-chip').textContent=rol==='super'?'Super Admin':'Agente';
+  if(rol==='super') document.getElementById('tab-accesos').style.display='block';
+  cargarTodo();
+}
+
+window.doLogout=async function(){
+  await sb.auth.signOut();
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  currentUser=null; agenteData=null;
+};
+
+(async()=>{
+  const { data:{session} } = await sb.auth.getSession();
+  if(session){
+    currentUser=session.user;
+    const email=session.user.email;
+    const rol=email===SUPER_ADMIN?'super':'agente';
+    if(rol==='agente'){
+      const { data:ag } = await sb.from('agentes_soporte').select('*').eq('email',email).single();
+      if(!ag){ await sb.auth.signOut(); return; }
+      agenteData=ag;
+      aplicarPermisosAgente(ag);
+    }
+    iniciarApp(email,rol);
+  }
+})();
+
+async function cargarTodo(){
+  await cargarTickets();
+  if(rolActual==='super') await cargarAgentes();
+}
+
+async function cargarTickets(){
+  const { data } = await sb.from('tickets_soporte').select('*').order('created_at',{ascending:false});
+  todosTickets=data||[];
+  const hoy=new Date().toDateString();
+  document.getElementById('st-abiertos').textContent=todosTickets.filter(t=>t.estado==='abierto').length;
+  document.getElementById('st-proceso').textContent=todosTickets.filter(t=>t.estado==='proceso').length;
+  document.getElementById('st-resueltos').textContent=todosTickets.filter(t=>t.estado==='resuelto'&&new Date(t.updated_at).toDateString()===hoy).length;
+  document.getElementById('st-total').textContent=todosTickets.length;
+  renderTickets();
+}
+
+function renderTickets(){
+  let lista=todosTickets.filter(t=>{
+    if(filtroTk==='abierto') return t.estado==='abierto';
+    if(filtroTk==='proceso') return t.estado==='proceso';
+    if(filtroTk==='resuelto') return t.estado==='resuelto';
+    if(filtroTk==='urgente') return t.prioridad==='urgente';
+    return true;
+  });
+  if(busqTk) lista=lista.filter(t=>(t.nombre_usuario||'').toLowerCase().includes(busqTk)||(t.asunto||'').toLowerCase().includes(busqTk)||(t.email_usuario||'').toLowerCase().includes(busqTk));
+  const cont=document.getElementById('tickets-lista');
+  if(!lista.length){ cont.innerHTML='<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12"/></svg><p>Sin tickets</p></div>'; return; }
+  cont.innerHTML='';
+  lista.forEach(t=>{
+    const div=document.createElement('div');
+    div.className=`ticket-card ${t.prioridad||'bajo'}`;
+    div.onclick=()=>abrirTicket(t);
+    const fecha=new Date(t.created_at).toLocaleDateString('es-EC',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    const rol=t.rol_usuario==='proveedor'?'🏢':'👤';
+    div.innerHTML=`
+      <div class="tk-header">
+        <div class="tk-avatar" style="background:${t.rol_usuario==='proveedor'?'rgba(255,140,0,0.15)':'rgba(0,122,255,0.15)'};color:${t.rol_usuario==='proveedor'?'var(--naranja)':'var(--azul)'}">${rol}</div>
+        <div class="tk-info"><div class="tk-nombre">${t.nombre_usuario||t.email_usuario||'Usuario'}</div><div class="tk-meta">${t.email_usuario||'—'}</div></div>
+        <span class="tk-badge badge-${t.estado}">${t.estado}</span>
+      </div>
+      <div class="tk-asunto">${t.asunto||'Sin asunto'}</div>
+      <div class="tk-preview">${t.descripcion||''}</div>
+      <div class="tk-footer">
+        <div class="tk-prioridad">🔴 ${t.prioridad||'bajo'}</div>
+        <div class="tk-tipo">${t.tipo||'general'}</div>
+        <div class="tk-time">${fecha}</div>
+      </div>`;
+    cont.appendChild(div);
+  });
+}
+
+async function abrirTicket(ticket){
+  ticketActivo=ticket;
+  document.getElementById('cv-nombre').textContent=ticket.nombre_usuario||ticket.email_usuario||'Usuario';
+  document.getElementById('cv-asunto').textContent=ticket.asunto||'Sin asunto';
+  const rol=ticket.rol_usuario==='proveedor'?'🏢':'👤';
+  document.getElementById('cv-avatar').textContent=rol;
+  document.getElementById('cv-avatar').style.background=ticket.rol_usuario==='proveedor'?'rgba(255,140,0,0.15)':'rgba(0,122,255,0.15)';
+
+  document.getElementById('conv-view').classList.add('show');
+
+  // Cargar mensajes del ticket
+  const { data } = await sb.from('mensajes_soporte').select('*').eq('ticket_id',ticket.id).order('created_at',{ascending:true});
+  mensajesTicket=data||[];
+  renderMensajes();
+
+  // Si está abierto, ponerlo en proceso
+  if(ticket.estado==='abierto'){
+    await sb.from('tickets_soporte').update({estado:'proceso'}).eq('id',ticket.id);
+    ticket.estado='proceso';
+    cargarTickets();
+  }
+
+  const input=document.getElementById('cv-input');
+  input.oninput=()=>{ input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,100)+'px'; };
+  input.onkeydown=e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); enviarRespuesta(); } };
+}
+
+function renderMensajes(){
+  const area=document.getElementById('mensajes-area');
+  area.innerHTML='';
+
+  // Mensaje inicial del ticket
+  const msgInicial=document.createElement('div'); msgInicial.className='msg-sistema';
+  msgInicial.textContent=`Ticket creado · ${new Date(ticketActivo.created_at).toLocaleDateString('es-EC')}`;
+  area.appendChild(msgInicial);
+
+  const descDiv=document.createElement('div'); descDiv.className='msg-grupo usuario';
+  descDiv.innerHTML=`<div class="msg-sender-lbl">${ticketActivo.nombre_usuario||'Usuario'}</div><div class="msg-burbuja usuario">${ticketActivo.descripcion||''}<div class="msg-hora-txt">${new Date(ticketActivo.created_at).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})}</div></div>`;
+  area.appendChild(descDiv);
+
+  mensajesTicket.forEach(m=>{
+    const esAgente=m.es_agente;
+    const grupo=document.createElement('div'); grupo.className=`msg-grupo ${esAgente?'agente':'usuario'}`;
+    const hora=new Date(m.created_at).toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'});
+    grupo.innerHTML=`<div class="msg-sender-lbl">${esAgente?(m.nombre_agente||'Soporte'):(ticketActivo.nombre_usuario||'Usuario')}</div><div class="msg-burbuja ${esAgente?'agente':'usuario'}">${m.texto}<div class="msg-hora-txt">${hora}</div></div>`;
+    area.appendChild(grupo);
+  });
+  area.scrollTop=area.scrollHeight;
+}
+
+window.enviarRespuesta=async function(){
+  const input=document.getElementById('cv-input');
+  const texto=input.value.trim();
+  if(!texto||!ticketActivo) return;
+  input.value=''; input.style.height='auto';
+  const agenteName=agenteData?.nombre||(currentUser?.email===SUPER_ADMIN?'Super Admin':'Agente');
+  await sb.from('mensajes_soporte').insert({ticket_id:ticketActivo.id,texto,es_agente:true,nombre_agente:agenteName});
+  await sb.from('tickets_soporte').update({updated_at:new Date().toISOString()}).eq('id',ticketActivo.id);
+  mensajesTicket.push({texto,es_agente:true,nombre_agente:agenteName,created_at:new Date().toISOString()});
+  renderMensajes();
+};
+
+window.usarRespuesta=function(texto){ document.getElementById('cv-input').value=texto; document.getElementById('cv-input').focus(); };
+
+window.cambiarEstadoTicket=async function(){
+  if(!ticketActivo) return;
+  const nuevoEstado=ticketActivo.estado==='proceso'?'abierto':'proceso';
+  await sb.from('tickets_soporte').update({estado:nuevoEstado}).eq('id',ticketActivo.id);
+  ticketActivo.estado=nuevoEstado;
+  document.getElementById('cv-btn-estado').textContent=nuevoEstado==='proceso'?'En proceso':'Abrir';
+  cargarTickets();
+  showToast('Estado: '+nuevoEstado);
+};
+
+window.resolverTicket=async function(){
+  if(!ticketActivo) return;
+  await sb.from('tickets_soporte').update({estado:'resuelto',updated_at:new Date().toISOString()}).eq('id',ticketActivo.id);
+  // Mensaje automático
+  await sb.from('mensajes_soporte').insert({ticket_id:ticketActivo.id,texto:'✅ Este ticket ha sido marcado como resuelto. Si el problema persiste, puedes crear un nuevo ticket.',es_agente:true,nombre_agente:'Sistema'});
+  cerrarConv();
+  cargarTickets();
+  showToast('✓ Ticket resuelto');
+};
+
+window.cerrarConv=function(){ document.getElementById('conv-view').classList.remove('show'); ticketActivo=null; };
+
+// BUSCAR USUARIO
+window.buscarUsuario=async function(){
+  const q=document.getElementById('buscar-input').value.trim().toLowerCase();
+  if(!q) return;
+  const res=document.getElementById('buscar-resultado');
+  res.innerHTML='<div style="color:#555;font-size:0.82rem;padding:10px;">Buscando...</div>';
+  const { data } = await sb.from('usuarios').select('*').or(`nombre.ilike.%${q}%,email.ilike.%${q}%,cedula.ilike.%${q}%,empresa.ilike.%${q}%`).limit(10);
+  if(!data?.length){ res.innerHTML='<div style="color:#555;font-size:0.82rem;padding:10px;">Sin resultados</div>'; return; }
+  res.innerHTML='';
+  data.forEach(u=>{
+    const div=document.createElement('div');
+    div.className='acceso-card';
+    div.style.cursor='default';
+    const foto=u.foto_perfil||u.logo_empresa||'';
+    div.innerHTML=`
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="width:38px;height:38px;border-radius:11px;background:${u.rol==='proveedor'?'rgba(255,140,0,0.15)':'rgba(0,122,255,0.15)'};display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:800;color:${u.rol==='proveedor'?'var(--naranja)':'var(--azul)'};flex-shrink:0;overflow:hidden;">${foto?`<img src="${foto}" style="width:100%;height:100%;object-fit:cover;" alt="">`:(u.empresa||u.nombre||'U')[0].toUpperCase()}</div>
+          <div><div style="font-size:0.88rem;font-weight:700;color:white;">${u.empresa||u.nombre||'Sin nombre'}</div><div style="font-size:0.72rem;color:#555;">${u.email||'—'} · ${u.rol||'—'}</div></div>
+          <span style="font-size:0.62rem;font-weight:700;padding:3px 8px;border-radius:6px;margin-left:auto;" class="badge-${u.activo?'activo':'inactivo'}">${u.activo?'Activo':'Bloqueado'}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:0.72rem;color:#555;margin-bottom:8px;">
+          <div>📍 ${u.ciudad||'—'}</div>
+          <div>🪪 ${u.cedula||'—'}</div>
+          <div>📞 ${u.telefono||'—'}</div>
+          <div>✓ ${u.verificado?'Verificado':'No verificado'}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-herr azul" onclick="document.getElementById('reset-email').value='${u.email}';showTab('herramientas',document.querySelectorAll('.tab-btn')[2])">Reset pass</button>
+          <button class="btn-herr verde" onclick="verificarUsuarioDirecto('${u.id}')">Verificar</button>
+          <button class="btn-herr ${u.activo?'rojo':'verde'}" onclick="toggleBloqueoDirecto('${u.id}',${u.activo},'${u.email}')">${u.activo?'Bloquear':'Activar'}</button>
+          <button class="btn-herr naranja" onclick="crearTicketPara('${u.email}','${u.nombre||u.empresa||''}','${u.rol||''}')">+ Ticket</button>
+        </div>
+      </div>`;
+    res.appendChild(div);
+  });
+};
+
+window.verificarUsuarioDirecto=async function(id){
+  await sb.from('usuarios').update({verificado:true}).eq('id',id);
+  showToast('✓ Usuario verificado');
+  buscarUsuario();
+};
+
+window.toggleBloqueoDirecto=async function(id,activo,email){
+  if(!confirm(`¿${activo?'Bloquear':'Activar'} a ${email}?`)) return;
+  await sb.from('usuarios').update({activo:!activo}).eq('id',id);
+  showToast(activo?'Usuario bloqueado':'Usuario activado');
+  buscarUsuario();
+};
+
+window.crearTicketPara=function(email,nombre,rol){
+  document.getElementById('nt-email').value=email;
+  document.getElementById('modal-ticket').classList.add('show');
+};
+
+// HERRAMIENTAS
+window.resetearPassword=async function(){
+  const email=document.getElementById('reset-email').value.trim();
+  if(!email) return;
+  const res=document.getElementById('reset-res');
+  const { error } = await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://proveed-emprendedor.vercel.app/login.html'});
+  res.className='herr-resultado show '+(error?'error':'exito');
+  res.textContent=error?'Error: '+error.message:'✓ Link de reseteo enviado a '+email;
+};
+
+window.verificarUsuario=async function(){
+  const email=document.getElementById('verif-email').value.trim();
+  if(!email) return;
+  const res=document.getElementById('verif-res');
+  const { data:u } = await sb.from('usuarios').select('id').eq('email',email).single();
+  if(!u){ res.className='herr-resultado show error'; res.textContent='Usuario no encontrado'; return; }
+  await sb.from('usuarios').update({verificado:true}).eq('id',u.id);
+  res.className='herr-resultado show exito';
+  res.textContent='✓ Usuario '+email+' verificado correctamente';
+};
+
+window.toggleBloqueo=async function(bloquear){
+  const email=document.getElementById('block-email').value.trim();
+  if(!email) return;
+  const res=document.getElementById('block-res');
+  const { data:u } = await sb.from('usuarios').select('id').eq('email',email).single();
+  if(!u){ res.className='herr-resultado show error'; res.textContent='Usuario no encontrado'; return; }
+  await sb.from('usuarios').update({activo:!bloquear}).eq('id',u.id);
+  res.className='herr-resultado show exito';
+  res.textContent=(bloquear?'🔒 Usuario bloqueado: ':'✓ Usuario activado: ')+email;
+};
+
+window.cambiarRol=async function(){
+  const email=document.getElementById('rol-email').value.trim();
+  const rol=document.getElementById('rol-nuevo').value;
+  if(!email) return;
+  const res=document.getElementById('rol-res');
+  const { data:u } = await sb.from('usuarios').select('id').eq('email',email).single();
+  if(!u){ res.className='herr-resultado show error'; res.textContent='Usuario no encontrado'; return; }
+  await sb.from('usuarios').update({rol}).eq('id',u.id);
+  res.className='herr-resultado show exito';
+  res.textContent='✓ Rol cambiado a '+rol+' para '+email;
+};
+
+window.consultarUsuario=async function(){
+  const email=document.getElementById('cons-email').value.trim();
+  if(!email) return;
+  const res=document.getElementById('cons-res');
+  const { data:u } = await sb.from('usuarios').select('*').eq('email',email).single();
+  if(!u){ res.className='herr-resultado show error'; res.textContent='Usuario no encontrado'; return; }
+  res.className='herr-resultado show';
+  res.style.color='#aaa';
+  res.innerHTML=`
+    <div><b style="color:white">${u.empresa||u.nombre||'—'}</b> · ${u.rol||'—'}</div>
+    <div style="margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+      <span>Email: ${u.email}</span><span>Ciudad: ${u.ciudad||'—'}</span>
+      <span>Cédula: ${u.cedula||'—'}</span><span>Tel: ${u.telefono||'—'}</span>
+      <span>Verificado: ${u.verificado?'✅':'❌'}</span><span>Activo: ${u.activo?'✅':'❌'}</span>
+      ${u.ruc?`<span>RUC: ${u.ruc}</span>`:''}${u.empresa?`<span>Empresa: ${u.empresa}</span>`:''}
+    </div>
+    <div style="margin-top:6px;font-size:0.68rem;color:#555;">Registro: ${new Date(u.created_at).toLocaleDateString('es-EC')}</div>`;
+};
+
+window.eliminarCuenta=async function(){
+  const email=document.getElementById('del-email').value.trim();
+  if(!email) return;
+  const res=document.getElementById('del-res');
+  if(!confirm('¿Eliminar permanentemente la cuenta de '+email+'? Esta acción no se puede deshacer.')) return;
+  const { data:u } = await sb.from('usuarios').select('id').eq('email',email).single();
+  if(!u){ res.className='herr-resultado show error'; res.textContent='Usuario no encontrado'; return; }
+  await sb.from('usuarios').delete().eq('id',u.id);
+  res.className='herr-resultado show exito';
+  res.textContent='✓ Cuenta eliminada: '+email;
+};
+
+// TICKETS
+window.abrirNuevoTicket=()=>document.getElementById('modal-ticket').classList.add('show');
+
+window.crearTicketManual=async function(){
+  const email=document.getElementById('nt-email').value.trim();
+  const asunto=document.getElementById('nt-asunto').value.trim();
+  const desc=document.getElementById('nt-desc').value.trim();
+  if(!email||!asunto||!desc){ showToast('Completa todos los campos'); return; }
+  const { data:u } = await sb.from('usuarios').select('nombre,empresa,rol').eq('email',email).single();
+  await sb.from('tickets_soporte').insert({
+    email_usuario:email,
+    nombre_usuario:u?.empresa||u?.nombre||email,
+    rol_usuario:u?.rol||'emprendedor',
+    asunto, descripcion:desc,
+    prioridad:document.getElementById('nt-prioridad').value,
+    tipo:document.getElementById('nt-tipo').value,
+    estado:'abierto'
+  });
+  document.getElementById('modal-ticket').classList.remove('show');
+  showToast('✓ Ticket creado');
+  cargarTickets();
+};
+
+
+// AGENTES
+async function cargarAgentes(){
+  const { data } = await sb.from('agentes_soporte').select('*').order('created_at',{ascending:false});
+  const cont=document.getElementById('agentes-lista');
+  if(!data?.length){ cont.innerHTML='<div class="empty-state"><p>Sin agentes aún</p></div>'; return; }
+  cont.innerHTML='';
+  data.forEach(a=>{
+    const div=document.createElement('div'); div.className='acceso-card';
+    const perms=a.permisos||[];
+    div.innerHTML=`
+      <div class="acceso-info">
+        <div class="acceso-nombre">${a.nombre||'Agente'}</div>
+        <div class="acceso-email">${a.email}</div>
+        <div class="acceso-permisos">
+          ${['tickets','buscar','reset','verificar','bloquear','eliminar'].map(p=>`<span class="perm-tag ${perms.includes(p)?'on':''}">${p}</span>`).join('')}
+        </div>
+      </div>
+      <div class="acceso-actions">
+        <button class="acc-btn" style="background:rgba(255,77,77,0.1);color:var(--rojo);" onclick="eliminarAgente('${a.id}')">Eliminar</button>
+      </div>`;
+    cont.appendChild(div);
+  });
+}
+
+window.abrirNuevoAgente=()=>document.getElementById('modal-agente').classList.add('show');
+
+window.crearAgente=async function(){
+  const nombre=document.getElementById('na-nombre').value.trim();
+  const email=document.getElementById('na-email').value.trim();
+  const pass=document.getElementById('na-pass').value;
+  if(!nombre||!email||!pass){ showToast('Completa todos los campos'); return; }
+  const permisos=[];
+  if(document.getElementById('p-tickets').checked) permisos.push('tickets');
+  if(document.getElementById('p-buscar').checked) permisos.push('buscar');
+  if(document.getElementById('p-reset').checked) permisos.push('reset');
+  if(document.getElementById('p-verificar').checked) permisos.push('verificar');
+  if(document.getElementById('p-bloquear').checked) permisos.push('bloquear');
+  if(document.getElementById('p-eliminar').checked) permisos.push('eliminar');
+  try{
+    const { data,error } = await sb.auth.signUp({email,password:pass});
+    if(error) throw error;
+    await sb.from('agentes_soporte').insert({id:data.user.id,nombre,email,permisos,activo:true});
+    document.getElementById('modal-agente').classList.remove('show');
+    showToast('✓ Agente creado: '+nombre);
+    cargarAgentes();
+  } catch(e){ showToast('Error: '+e.message); }
+};
+
+window.eliminarAgente=async function(id){
+  if(!confirm('¿Eliminar este agente?')) return;
+  await sb.from('agentes_soporte').delete().eq('id',id);
+  showToast('Agente eliminado');
+  cargarAgentes();
+};
+
+// FILTROS Y TABS
+window.filtrarTk=(f,el)=>{ filtroTk=f; document.querySelectorAll('#sec-tickets .f-btn').forEach(b=>b.classList.remove('active')); el.classList.add('active'); renderTickets(); };
+window.buscarTicket=v=>{ busqTk=v.toLowerCase(); renderTickets(); };
+window.showTab=function(tab,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+tab).classList.add('active');
+  if(btn) btn.classList.add('active');
+};
+
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>
